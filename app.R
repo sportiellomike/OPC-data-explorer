@@ -8,6 +8,22 @@ library(dplyr)
 library(sf)
 library(writexl)  # for Excel file export
 
+# Load data
+data <- readRDS("finalmerge-09Apr2025.rds")
+# data2 <- readRDS("finalmerge-09Apr2025.rds")
+
+# us_states<-us_map(
+#     regions = c("states")
+# )
+# us_counties<-us_map(
+#     regions = c("counties")
+# )
+
+# saveRDS(us_states, "us_states.rds")
+# saveRDS(us_counties, "us_counties.rds")
+us_states<-readRDS("us_states.rds")
+us_counties<-readRDS("us_counties.rds")
+
 # Define column names and their labels
 national_result_cols <- c(
     "cumulativelivessaved",
@@ -17,7 +33,7 @@ national_result_cols <- c(
     "cumulativeHIVinfectionhighaverted",
     "infectiousdiscountedcost",
     "valueoflivessaved",
-    "Provisional.Drug.Overdose.Deaths"
+    "cumulativedeaths"
 )
 
 result_cols <- c(
@@ -56,14 +72,7 @@ result_cols <- c(
     "valueoflivessaved"
 )
 
-# Load data
-data <- readRDS("finalmerge-07Apr2025.rds")
-us_states<-us_map(
-  regions = c("states")
-)
-us_counties<-us_map(
-  regions = c("counties")
-)
+
 
 # UI definition
 ui <- fluidPage(
@@ -171,7 +180,7 @@ ui <- fluidPage(
             selectInput("state", 
                       "Select State:",
                       choices = sort(unique(data$STATE_NAME)),
-                      selected = "Alabama"),
+                      selected = "New York"),
             
             selectInput("county", 
                       "Select County:",
@@ -189,10 +198,14 @@ ui <- fluidPage(
             
             selectInput("plotColumn",
                       "Select Column for Plot Color:",
-                      choices = c("cumulativelivessaved", "deathsper100k",
-                                "injectionsatophc", "pwid", 
+                      choices = c("cumulativelivessaved", 
+                                  "deathsper100k",
+                                "injectionsatophc", 
+                                "pwid", 
                                 "totalinjectionseverywhere", 
-                              
+                                # 'cumulativelivessavedper100k',
+                                'Population',
+                                'pop18plus',
                                 'cumulativeHIVinfectionlowaverted',
                                 'cumulativeHIVinfectionmedaverted',
                                 'cumulativeHIVinfectionhighaverted',
@@ -235,8 +248,27 @@ ui <- fluidPage(
         mainPanel(
             tabsetPanel(
                 tabPanel("Plots",
+                         h3("Plots for subset of data selected on the left", 
+                            style = "text-align: center; margin-bottom: 30px; color: #000000;"),
                     plotOutput("plot2"),
-                    plotOutput("plot1")
+                    plotOutput("plot1"),
+                    h5('Right click the state plot and/or national plot once you have selected the subset of data on the left.'),
+                       h5('Though the data for Connecticut and some Alaska counties are factored into the results, they may not be plotted given the differences in mapping boundary names and how the CDC reported the data.') ,
+                       h5('Make sure to transform the axis to optimize coloring of the plot and make the legend legible with text size and color bar free text'),
+                    h4("Legend Key", style = "text-align: center; margin-bottom: 10px; color: #000000;"),
+                       h5("cumulativelivessaved: Deaths averted due to OPHC"), 
+                          h5("deathsper100k: Deaths per 100,000 people"),
+                             h5("injectionsatophc: Number of injections at OPHC"), 
+                                h5("pwid: Number of people who inject drugs"), 
+                                   h5("totalinjectionseverywhere: Number of injections in and out of the OPHC"), 
+                       
+                                      h5('cumulativeHIVinfectionlowaverted: Cumulative HIV infections averted assuming low HIV incidence model'),
+                                         h5('cumulativeHIVinfectionmedaverted: Cumulative HIV infections averted assuming medium HIV incidence model'),
+                                            h5('cumulativeHIVinfectionhighaverted: Cumulative HIV infections averted assuming high HIV incidence model'),
+                                               h5('cumulativeHCVinfectionaverted: Cumulative Hepatitis C Virus infections averted'),
+                                                  h5("totalsavings: Total monetary savings from OPHC including both discounted costs from infections that did not occur and the 'statistical value' of life"),
+                                                     h5('valueoflivessaved: Statistical value of deaths averted'),
+                                                        h5('infectiousdiscountedcost: Costs saved from infections that did not occur due to OPHC')
                 ),
                 tabPanel("Local Results",
                     h3("Results for subset of data selected on the left", 
@@ -307,8 +339,8 @@ ui <- fluidPage(
                                 "cumulativeHIVinfectionmedaverted" = "Cumulative HIV Infection Med Averted",
                                 "cumulativeHIVinfectionhighaverted" = "Cumulative HIV Infection High Averted",
                                 "infectiousdiscountedcost" = "Infectious Discounted Cost",
-                                "valueoflivessaved" = "Value of Lives Saved",
-                                "Provisional.Drug.Overdose.Deaths" = "Provisional Drug Overdose Deaths"
+                                "valueoflivessaved" = "Statistical Value of Lives Saved",
+                                "cumulativedeaths" = "Actual deaths January 2020-June 2024"
                             )
                             column(
                                 width = 4,
@@ -606,7 +638,7 @@ ggplot() +
                     value <- sum(data[[col_name]], na.rm = TRUE)
                     # Add dollar sign for cost-related metrics and format with commas
                     formatted_value <- format(round(value), big.mark = ",", scientific = FALSE)
-                    if (grepl("cost|savings", col_name, ignore.case = TRUE)) {
+                    if (grepl("cost|savings|value", col_name, ignore.case = TRUE)) {
                         paste0("$", formatted_value)
                     } else {
                         formatted_value
@@ -665,7 +697,7 @@ ggplot() +
                     value <- data[[col_name]][1]
                     # Add dollar sign for cost-related metrics and format with commas
                     formatted_value <- format(round(value), big.mark = ",", scientific = FALSE)
-                    if (grepl("cost|savings", col_name, ignore.case = TRUE)) {
+                    if (grepl("cost|savings|value", col_name, ignore.case = TRUE)) {
                         paste0("$", formatted_value)
                     } else {
                         formatted_value
