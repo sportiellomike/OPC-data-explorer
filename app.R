@@ -9,7 +9,9 @@ library(sf)
 library(writexl)  # for Excel file export
 
 # Load data
-data <- readRDS("finalmerge-24Jan2026.rds")
+# data <- readRDS("finalmerge-24Jan2026.rds")
+data <- readRDS("finalmerge-short-18Mar2026.rds")
+
 # data2 <- readRDS("finalmerge-09Apr2025.rds")
 
 # us_states<-us_map(
